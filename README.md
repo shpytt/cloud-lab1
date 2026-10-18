@@ -126,3 +126,23 @@ terraform -chdir=terraform destroy
 ```
 
 Видаляє всі ресурси, включно з образами в ECR, базою та секретом.
+
+## CI/CD (завдання 5) — реалізовано, але не застосовано
+
+Код готовий:
+- `terraform/github_oidc.tf.disabled` — OIDC-провайдер GitHub, IAM-роль з trust policy
+  (тільки репозиторій `shpytt/cloud-lab1`, гілка `main`) і політика з мінімальними правами
+  (push лише в наш ECR, оновлення лише нашого ECS-сервісу, PassRole лише ролі виконання).
+- `.github/workflows/deploy.yml` — збірка образу, тег = хеш коміту, push в ECR,
+  нова task definition, оновлення ECS-сервісу. Автентифікація через OIDC, без ключів.
+
+**Чому не застосовано.** Акаунт створено за новою схемою AWS («Sign up for AWS (new)»):
+він є проєктом в AWS Organizations, якою керує AWS, з незмінними service control policies.
+Для Free і Paid планів SCP містить `Deny` на `iam:*Provider*`, тому `terraform apply` повертає:
+
+    AccessDenied: ... not authorized to perform: iam:CreateOpenIDConnectProvider ...
+    with an explicit deny in a service control policy
+
+Зняти обмеження можна лише через «Activate advanced features», що вимагає переходу на Paid plan.
+Варіант з довгоживучими access keys у GitHub Secrets заборонений умовою лаби, тому не використовувався.
+Джерело: https://docs.aws.amazon.com/accounts/latest/reference/scps-and-rcps-for-projects.html

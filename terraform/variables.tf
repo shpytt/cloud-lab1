@@ -43,3 +43,9 @@ variable "db_username" {
   type    = string
   default = "labadmin"
 }
+
+variable "github_repo" {
+  description = "Репозиторій GitHub, якому дозволено деплоїти (власник/назва)"
+  type        = string
+  default     = "shpytt/cloud-lab1"
+}
