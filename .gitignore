@@ -1,0 +1,14 @@
+# секрети
+.env
+*.tfvars
+!*.tfvars.example
+
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# python
+__pycache__/
+*.pyc
