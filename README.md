@@ -6,8 +6,8 @@
 
 ## Публічна адреса
 
-- API: http://cloud-lab1-alb-497232148.eu-north-1.elb.amazonaws.com
-- Swagger UI: http://cloud-lab1-alb-497232148.eu-north-1.elb.amazonaws.com/docs
+- API: http://cloud-lab1-alb-248366825.eu-north-1.elb.amazonaws.com
+- Swagger UI: http://cloud-lab1-alb-248366825.eu-north-1.elb.amazonaws.com/docs
 
 > Адреса змінюється після кожного `terraform destroy` / `terraform apply`.
 > Актуальну можна отримати командою `terraform -chdir=terraform output alb_url`.
