@@ -13,7 +13,7 @@ from .database import Base, engine, get_db
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("api")
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 
 @asynccontextmanager

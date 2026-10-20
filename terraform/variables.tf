@@ -1,5 +1,5 @@
 variable "region" {
-  description = "AWS регіон (у нашому акаунті фіксований)"
+  description = "AWS регіон (у акаунті фіксований)"
   type        = string
   default     = "eu-north-1"
 }
