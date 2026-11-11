@@ -114,6 +114,12 @@ resource "aws_lb_listener" "http" {
 
 resource "aws_ecs_cluster" "main" {
   name = var.project
+
+  # Container Insights дає метрики RunningTaskCount / DesiredTaskCount для дашборда
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {

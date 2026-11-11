@@ -68,3 +68,16 @@ variable "autoscaling_cpu_target" {
   type        = number
   default     = 60
 }
+
+# ---------- Сповіщення (лабораторна 2) ----------
+
+variable "alert_email" {
+  description = "Адреса для сповіщень (задається в terraform.tfvars, не в репозиторії)"
+  type        = string
+}
+
+variable "alarm_cpu_threshold" {
+  description = "Поріг сповіщення за завантаженням процесора, %"
+  type        = number
+  default     = 70
+}
