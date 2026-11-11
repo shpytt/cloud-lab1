@@ -35,3 +35,10 @@ class ReadingOut(BaseModel):
     temperature: float
     humidity: float | None
     created_at: datetime
+
+class ReadingAccepted(BaseModel):
+    """Відповідь 202: запис прийнято в чергу, результат буде пізніше."""
+
+    request_id: str
+    status: str
+    status_url: str
