@@ -93,11 +93,37 @@ variable "redis_image" {
 variable "cache_enabled" {
   description = "Чи використовує API кеш Redis (перемикач для порівняльного тесту)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "cache_ttl_seconds" {
   description = "Термін дії запису в кеші, с"
   type        = number
   default     = 30
+}
+
+# ---------- Черга та обробник (бонус) ----------
+
+variable "async_writes" {
+  description = "Чи пише API показники через чергу (202 Accepted) замість прямого запису в базу"
+  type        = bool
+  default     = false
+}
+
+variable "worker_delay_ms" {
+  description = "Штучна тривалість обробки одного повідомлення, мс (імітація важкої операції)"
+  type        = number
+  default     = 150
+}
+
+variable "worker_max" {
+  description = "Максимальна кількість обробників"
+  type        = number
+  default     = 3
+}
+
+variable "worker_queue_target" {
+  description = "Цільова довжина черги для масштабування обробників"
+  type        = number
+  default     = 100
 }

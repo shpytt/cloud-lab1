@@ -129,6 +129,7 @@ resource "aws_ecs_task_definition" "app" {
   cpu                      = "256" # 0.25 vCPU
   memory                   = "512" # 0.5 ГБ
   execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.api_task.arn # права самого застосунку (SQS)
 
   runtime_platform {
     operating_system_family = "LINUX"
@@ -152,6 +153,9 @@ resource "aws_ecs_task_definition" "app" {
       { name = "REDIS_URL", value = "redis://redis.${aws_service_discovery_private_dns_namespace.main.name}:6379/0" },
       { name = "CACHE_ENABLED", value = tostring(var.cache_enabled) },
       { name = "CACHE_TTL_SECONDS", value = tostring(var.cache_ttl_seconds) },
+      { name = "AWS_REGION", value = var.region },
+      { name = "SQS_QUEUE_URL", value = aws_sqs_queue.readings.url },
+      { name = "ASYNC_WRITES", value = tostring(var.async_writes) },
     ]
 
     # Секретні змінні: ECS бере їх із Secrets Manager під час запуску

@@ -94,6 +94,39 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
         }
       },
+      {
+        type = "metric", x = 0, y = 12, width = 12, height = 6
+        properties = {
+          title   = "Довжина черги SQS (повідомлень очікує обробки)"
+          region  = var.region
+          view    = "timeSeries"
+          stacked = false
+          period  = 60
+          stat    = "Average"
+          metrics = [
+            ["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", aws_sqs_queue.readings.name, { label = "У черзі" }],
+          ]
+          annotations = {
+            horizontal = [{ label = "Ціль масштабування обробників", value = var.worker_queue_target }]
+          }
+        }
+      },
+      {
+        type = "metric", x = 12, y = 12, width = 12, height = 6
+        properties = {
+          title   = "Кількість обробників черги: бажана і фактична"
+          region  = var.region
+          view    = "timeSeries"
+          stacked = false
+          period  = 60
+          stat    = "Average"
+          metrics = [
+            ["ECS/ContainerInsights", "DesiredTaskCount", "ClusterName", local.cluster_name, "ServiceName", aws_ecs_service.worker.name, { label = "Бажана (desired)" }],
+            ["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", local.cluster_name, "ServiceName", aws_ecs_service.worker.name, { label = "Фактична (running)" }],
+          ]
+          yAxis = { left = { min = 0, max = 4 } }
+        }
+      },
     ]
   })
 }
