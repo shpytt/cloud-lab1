@@ -16,7 +16,7 @@ from .database import Base, engine, get_db
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("api")
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 
 
 @asynccontextmanager
@@ -33,6 +33,8 @@ async def lifespan(app: FastAPI):
     else:
         raise RuntimeError("Could not connect to the database")
     yield
+    # Зупинка (SIGTERM): відправляємо в SQS усе, що лишилось у буфері
+    jobs.shutdown()
 
 
 app = FastAPI(title="IoT Devices API", version=APP_VERSION, lifespan=lifespan)
