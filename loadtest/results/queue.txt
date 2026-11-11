@@ -1,4 +1,4 @@
-START 2026-11-11 21:04:16 UTC
+START 2026-11-11 21:35:29 UTC
 Target: http://cloud-lab1-alb-394106418.eu-north-1.elb.amazonaws.com
 
          /\      Grafana   /‾‾/  
@@ -621,16 +621,16 @@ Target: http://cloud-lab1-alb-394106418.eu-north-1.elb.amazonaws.com
   █ THRESHOLDS 
 
     http_req_duration{name:GET /devices}
-    ✓ 'p(95)>=0' p(95)=686.35ms
+    ✓ 'p(95)>=0' p(95)=176.19ms
 
     http_req_duration{name:GET /devices/{id}}
-    ✓ 'p(95)>=0' p(95)=686.82ms
+    ✓ 'p(95)>=0' p(95)=161.05ms
 
     http_req_duration{name:GET /devices/{id}/readings}
-    ✓ 'p(95)>=0' p(95)=1.01s
+    ✓ 'p(95)>=0' p(95)=290.99ms
 
     http_req_duration{name:POST /devices/{id}/readings}
-    ✓ 'p(95)>=0' p(95)=797.48ms
+    ✓ 'p(95)>=0' p(95)=181.84ms
 
     http_req_failed
     ✓ 'rate<0.01' rate=0.00%
@@ -638,38 +638,37 @@ Target: http://cloud-lab1-alb-394106418.eu-north-1.elb.amazonaws.com
 
   █ TOTAL RESULTS 
 
-    checks_total.......: 54750  91.03936/s
-    checks_succeeded...: 99.99% 54749 out of 54750
-    checks_failed......: 0.00%  1 out of 54750
+    checks_total.......: 72220   119.984443/s
+    checks_succeeded...: 100.00% 72220 out of 72220
+    checks_failed......: 0.00%   0 out of 72220
 
     ✓ write accepted (201/202)
-    ✗ list devices 200
-      ↳  99% — ✓ 16424 / ✗ 1
+    ✓ list devices 200
     ✓ device 200
     ✓ readings 200
 
     CUSTOM
-    cache_hit_rate...........................: 98.52% 32365 out of 32849
+    cache_hit_rate...........................: 98.92% 42867 out of 43332
 
     HTTP
-    http_req_duration........................: avg=189.08ms min=30.96ms med=45.19ms p(95)=816.67ms p(99)=1.1s     max=1.9s 
-      { expected_response:true }.............: avg=189.08ms min=30.96ms med=45.19ms p(95)=816.69ms p(99)=1.1s     max=1.9s 
-      { name:GET /devices }..................: avg=149.45ms min=31.71ms med=39.04ms p(95)=686.35ms p(99)=897.65ms max=1.31s
-      { name:GET /devices/{id} }.............: avg=149.97ms min=30.96ms med=39.19ms p(95)=686.82ms p(99)=897.49ms max=1.31s
-      { name:GET /devices/{id}/readings }....: avg=264.46ms min=34.8ms  med=48.62ms p(95)=1.01s    p(99)=1.22s    max=1.84s
-      { name:POST /devices/{id}/readings }...: avg=199.12ms min=38.12ms med=51.37ms p(95)=797.48ms p(99)=1.08s    max=1.9s 
-    http_req_failed..........................: 0.00%  1 out of 54751
-    http_reqs................................: 54751  91.041023/s
+    http_req_duration........................: avg=67.05ms min=30.47ms med=43.69ms p(95)=203.55ms p(99)=356.39ms max=686.52ms
+      { expected_response:true }.............: avg=67.05ms min=30.47ms med=43.69ms p(95)=203.55ms p(99)=356.39ms max=686.52ms
+      { name:GET /devices }..................: avg=58.95ms min=30.47ms med=40.96ms p(95)=176.19ms p(99)=286.9ms  max=481.95ms
+      { name:GET /devices/{id} }.............: avg=57.94ms min=31.23ms med=41.65ms p(95)=161.05ms p(99)=280.71ms max=489.55ms
+      { name:GET /devices/{id}/readings }....: avg=86.37ms min=35.02ms med=48.53ms p(95)=290.99ms p(99)=435.8ms  max=686.52ms
+      { name:POST /devices/{id}/readings }...: avg=60.75ms min=31.24ms med=41.63ms p(95)=181.84ms p(99)=292.19ms max=409.56ms
+    http_req_failed..........................: 0.00%  0 out of 72221
+    http_reqs................................: 72221  119.986104/s
 
     EXECUTION
-    iteration_duration.......................: avg=4.94s    min=3.37s   med=3.65s   p(95)=7.9s     p(99)=8.49s    max=9.79s
-    iterations...............................: 5475   9.103936/s
+    iteration_duration.......................: avg=3.74s   min=3.37s   med=3.73s   p(95)=4.2s     p(99)=4.47s    max=5.41s   
+    iterations...............................: 7222   11.998444/s
     vus......................................: 1      min=0              max=60
     vus_max..................................: 60     min=60             max=60
 
     NETWORK
-    data_received............................: 134 MB 222 kB/s
-    data_sent................................: 7.3 MB 12 kB/s
+    data_received............................: 176 MB 293 kB/s
+    data_sent................................: 9.6 MB 16 kB/s
 
 
 
@@ -678,4 +677,7 @@ Target: http://cloud-lab1-alb-394106418.eu-north-1.elb.amazonaws.com
 |                            DescribeScalingActivities                            |
 +-----------------------------------+-------------+-------------------------------+
 |  2026-11-11T23:11:16.617000+02:00 |  Successful |  Setting desired count to 3.  |
+|  2026-11-11T23:32:38.464000+02:00 |  Successful |  Setting desired count to 2.  |
+|  2026-11-11T23:35:38.465000+02:00 |  Successful |  Setting desired count to 1.  |
+|  2026-11-11T23:42:16.586000+02:00 |  Successful |  Setting desired count to 3.  |
 +-----------------------------------+-------------+-------------------------------+

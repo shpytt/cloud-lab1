@@ -146,3 +146,19 @@ terraform -chdir=terraform destroy
 Зняти обмеження можна лише через «Activate advanced features», що вимагає переходу на Paid plan.
 Варіант з довгоживучими access keys у GitHub Secrets заборонений умовою лаби, тому не використовувався.
 Джерело: https://docs.aws.amazon.com/accounts/latest/reference/scps-and-rcps-for-projects.html
+## Лабораторна робота 2: масштабування, моніторинг, кешування
+
+| № | Завдання | Код | Документація |
+|---|---|---|---|
+| 1 | Автоматичне масштабування (1–4 екземпляри, CPU 60 %) | `terraform/autoscaling.tf` | [docs/AUTOSCALING.md](docs/AUTOSCALING.md) |
+| 2 | Сценарій навантаження (k6) | `loadtest/` | [docs/LOADTEST.md](docs/LOADTEST.md) |
+| 3 | Панель моніторингу CloudWatch | `terraform/monitoring.tf` | [docs/AUTOSCALING.md](docs/AUTOSCALING.md) |
+| 4 | Сповіщення на пошту | `terraform/alerts.tf` | [docs/ALERTS.md](docs/ALERTS.md) |
+| 5 | Кеш Redis, cache-aside | `app/cache.py`, `terraform/redis.tf` | [docs/CACHE.md](docs/CACHE.md) |
+| 6 | Черга SQS та обробник (бонус) | `app/jobs.py`, `app/worker.py`, `terraform/queue.tf` | [docs/QUEUE.md](docs/QUEUE.md) |
+| 7 | Ідемпотентність запису (бонус) | `app/idempotency.py`, `tests/` | [docs/IDEMPOTENCY.md](docs/IDEMPOTENCY.md) |
+| 8 | Масштабування за розкладом (бонус) | `terraform/schedule.tf` | [docs/SCHEDULE.md](docs/SCHEDULE.md) |
+
+Запуск навантажувального тесту: `./loadtest/run.sh`. Розгортання: `./deploy.sh`.
+
+CI/CD через OIDC, як і в лабораторній 1, не застосовано: SCP акаунта забороняє створення OIDC-провайдера. Розгортання виконується скриптом `deploy.sh`.

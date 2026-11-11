@@ -7,6 +7,11 @@ resource "aws_appautoscaling_target" "app" {
   scalable_dimension = "ecs:service:DesiredCount"
   min_capacity       = var.autoscaling_min
   max_capacity       = var.autoscaling_max
+
+  # Мінімум удень змінює розклад (schedule.tf); без цього apply повертав би його до 1
+  lifecycle {
+    ignore_changes = [min_capacity]
+  }
 }
 
 # Як масштабуємо: target tracking — AWS сам додає/вилучає задачі,

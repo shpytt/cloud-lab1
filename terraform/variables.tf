@@ -107,7 +107,7 @@ variable "cache_ttl_seconds" {
 variable "async_writes" {
   description = "Чи пише API показники через чергу (202 Accepted) замість прямого запису в базу"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "worker_delay_ms" {
@@ -126,4 +126,18 @@ variable "worker_queue_target" {
   description = "Цільова довжина черги для масштабування обробників"
   type        = number
   default     = 100
+}
+
+# ---------- Розклад (бонус) ----------
+
+variable "schedule_day_min" {
+  description = "Мінімум екземплярів удень (08:00-22:00 за Києвом)"
+  type        = number
+  default     = 2
+}
+
+variable "schedule_night_min" {
+  description = "Мінімум екземплярів уночі (22:00-08:00); 0 для ECS за ALB означав би недоступність"
+  type        = number
+  default     = 1
 }

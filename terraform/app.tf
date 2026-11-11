@@ -149,7 +149,6 @@ resource "aws_ecs_task_definition" "app" {
       { name = "DB_PORT", value = tostring(aws_db_instance.main.port) },
       { name = "DB_NAME", value = var.db_name },
       { name = "DB_SSLMODE", value = "require" },
-      { name = "DB_SSLMODE", value = "require" },
       { name = "REDIS_URL", value = "redis://redis.${aws_service_discovery_private_dns_namespace.main.name}:6379/0" },
       { name = "CACHE_ENABLED", value = tostring(var.cache_enabled) },
       { name = "CACHE_TTL_SECONDS", value = tostring(var.cache_ttl_seconds) },

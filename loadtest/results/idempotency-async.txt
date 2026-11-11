@@ -1,7 +1,7 @@
-Створено тестовий пристрій id=22, показників: 0
-Запит 1: 202 {'request_id': '7da253b4-385e-450c-b883-7000f7484055', 'status': 'queued', 'status_url': '/readings/requests/7da253b4-385e-450c-b883-7000f7484055'}
-Запит 2: 202 {'request_id': '7da253b4-385e-450c-b883-7000f7484055', 'status': 'queued', 'status_url': '/readings/requests/7da253b4-385e-450c-b883-7000f7484055'}  Idempotency-Replayed=true
-Режим черги, результат: {'request_id': '7da253b4-385e-450c-b883-7000f7484055', 'status': 'done', 'reading': {'id': 17212, 'device_id': 22, 'temperature': 21.5, 'humidity': 40.0, 'created_at': '2026-11-11T20:58:58.755732+00:00'}}
+Створено тестовий пристрій id=24, показників: 0
+Запит 1: 202 {'request_id': '76da52bf-83d9-4460-9196-f8a65ff92591', 'status': 'queued', 'status_url': '/readings/requests/76da52bf-83d9-4460-9196-f8a65ff92591'}
+Запит 2: 202 {'request_id': '76da52bf-83d9-4460-9196-f8a65ff92591', 'status': 'queued', 'status_url': '/readings/requests/76da52bf-83d9-4460-9196-f8a65ff92591'}  Idempotency-Replayed=true
+Режим черги, результат: {'request_id': '76da52bf-83d9-4460-9196-f8a65ff92591', 'status': 'done', 'reading': {'id': 22691, 'device_id': 24, 'temperature': 21.5, 'humidity': 40.0, 'created_at': '2026-11-11T21:23:29.614329+00:00'}}
 Показників у базі після двох однакових запитів: 1
 Після запиту з ІНШИМ ключем: 2
 OK: два однакові запити -> один запис у базі, дві однакові відповіді
