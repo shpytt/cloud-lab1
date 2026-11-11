@@ -2,14 +2,23 @@
 // Одна ітерація = 1 запис + 9 читань.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import { Rate } from 'k6/metrics';
 
 const BASE_URL = (__ENV.BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
-const VUS = Number(__ENV.VUS || 40);          // N користувачів на сталому навантаженні
+const VUS = Number(__ENV.VUS || 60);          // N користувачів на сталому навантаженні
 const THINK = Number(__ENV.THINK || 0.3);     // пауза між запитами, с
-const RAMP_UP = __ENV.RAMP_UP || '2m';        // фаза 1: наростання 0 -> N
+const RAMP_UP = __ENV.RAMP_UP || '3m';        // фаза 1: наростання 0 -> N
 const STEADY = __ENV.STEADY || '5m';          // фаза 2: стале навантаження
 const RAMP_DOWN = __ENV.RAMP_DOWN || '2m';    // фаза 3: спад N -> 0
 const DEVICES = 20;                           // скільки пристроїв використовує тест
+
+// Частка влучань у кеш: сервіс повертає заголовок X-Cache (HIT / MISS / DISABLED)
+const cacheHitRate = new Rate('cache_hit_rate');
+
+function trackCache(r) {
+  const x = r.headers['X-Cache'];
+  if (x === 'HIT' || x === 'MISS') cacheHitRate.add(x === 'HIT');
+}
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -58,12 +67,14 @@ export function setup() {
 function listDevices() {
   const r = http.get(`${BASE_URL}/devices`, { tags: { name: 'GET /devices' } });
   check(r, { 'list devices 200': (x) => x.status === 200 });
+  trackCache(r);
   sleep(THINK);
 }
 
 function getDevice(id) {
   const r = http.get(`${BASE_URL}/devices/${id}`, { tags: { name: 'GET /devices/{id}' } });
   check(r, { 'device 200': (x) => x.status === 200 });
+  trackCache(r);
   sleep(THINK);
 }
 

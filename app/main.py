@@ -1,19 +1,20 @@
+import json
 import logging
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+from . import cache, models, schemas
 from .database import Base, engine, get_db
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("api")
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 
 
 @asynccontextmanager
@@ -42,6 +43,15 @@ def get_device_or_404(device_id: int, db: Session) -> models.Device:
     return device
 
 
+def json_response(body: str, cache_status: str) -> Response:
+    """Готовий JSON + заголовок X-Cache: HIT / MISS / DISABLED."""
+    return Response(
+        content=body,
+        media_type="application/json",
+        headers={"X-Cache": cache_status},
+    )
+
+
 @app.get("/")
 def root():
     return {"service": "IoT Devices API", "version": APP_VERSION}
@@ -52,11 +62,29 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/cache/stats")
+def cache_stats():
+    return cache.stats()
+
+
 # ---------- Devices ----------
 
 @app.get("/devices", response_model=list[schemas.DeviceOut])
 def list_devices(db: Session = Depends(get_db)):
-    return db.scalars(select(models.Device).order_by(models.Device.id)).all()
+    # Cache-aside, крок 1: перевіряємо кеш
+    cached = cache.get_cached(cache.DEVICES_LIST_KEY)
+    if cached is not None:
+        return json_response(cached, "HIT")  # до бази не звертаємося взагалі
+
+    # Крок 2: у кеші немає (або сплив TTL) - читаємо з бази
+    devices = db.scalars(select(models.Device).order_by(models.Device.id)).all()
+    body = json.dumps(
+        [schemas.DeviceOut.model_validate(d).model_dump(mode="json") for d in devices]
+    )
+
+    # Крок 3: кладемо в кеш із терміном дії і повертаємо
+    cache.put(cache.DEVICES_LIST_KEY, body)
+    return json_response(body, cache.miss_label())
 
 
 @app.post("/devices", response_model=schemas.DeviceOut, status_code=status.HTTP_201_CREATED)
@@ -65,12 +93,21 @@ def create_device(data: schemas.DeviceCreate, db: Session = Depends(get_db)):
     db.add(device)
     db.commit()
     db.refresh(device)
+    cache.invalidate(cache.DEVICES_LIST_KEY)  # список змінився
     return device
 
 
 @app.get("/devices/{device_id}", response_model=schemas.DeviceOut)
 def get_device(device_id: int, db: Session = Depends(get_db)):
-    return get_device_or_404(device_id, db)
+    key = cache.device_key(device_id)
+    cached = cache.get_cached(key)
+    if cached is not None:
+        return json_response(cached, "HIT")
+
+    device = get_device_or_404(device_id, db)
+    body = schemas.DeviceOut.model_validate(device).model_dump_json()
+    cache.put(key, body)
+    return json_response(body, cache.miss_label())
 
 
 @app.patch("/devices/{device_id}", response_model=schemas.DeviceOut)
@@ -80,6 +117,8 @@ def update_device(device_id: int, data: schemas.DeviceUpdate, db: Session = Depe
         setattr(device, field, value)
     db.commit()
     db.refresh(device)
+    # Інвалідація: після запису в базу видаляємо застарілі записи з кешу
+    cache.invalidate(cache.DEVICES_LIST_KEY, cache.device_key(device_id))
     return device
 
 
@@ -88,6 +127,7 @@ def delete_device(device_id: int, db: Session = Depends(get_db)):
     device = get_device_or_404(device_id, db)
     db.delete(device)
     db.commit()
+    cache.invalidate(cache.DEVICES_LIST_KEY, cache.device_key(device_id))
 
 
 # ---------- Readings ----------

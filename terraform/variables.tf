@@ -81,3 +81,23 @@ variable "alarm_cpu_threshold" {
   type        = number
   default     = 70
 }
+
+# ---------- Кеш (лабораторна 2) ----------
+
+variable "redis_image" {
+  description = "Образ Redis (офіційний redis:7-alpine з публічного дзеркала ECR)"
+  type        = string
+  default     = "public.ecr.aws/docker/library/redis:7-alpine"
+}
+
+variable "cache_enabled" {
+  description = "Чи використовує API кеш Redis (перемикач для порівняльного тесту)"
+  type        = bool
+  default     = false
+}
+
+variable "cache_ttl_seconds" {
+  description = "Термін дії запису в кеші, с"
+  type        = number
+  default     = 30
+}
