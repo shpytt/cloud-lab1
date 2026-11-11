@@ -49,3 +49,22 @@ variable "github_repo" {
   type        = string
   default     = "shpytt/cloud-lab1"
 }
+# ---------- Автомасштабування (лабораторна 2) ----------
+
+variable "autoscaling_min" {
+  description = "Мінімальна кількість задач"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max" {
+  description = "Максимальна кількість задач (за умовою лаби не більше 4)"
+  type        = number
+  default     = 4
+}
+
+variable "autoscaling_cpu_target" {
+  description = "Цільове середнє завантаження процесора, %"
+  type        = number
+  default     = 60
+}

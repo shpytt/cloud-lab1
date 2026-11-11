@@ -188,6 +188,12 @@ resource "aws_ecs_service" "app" {
     rollback = true
   }
 
+  # Кількістю задач тепер керує автомасштабування:
+  # без цього terraform apply щоразу повертав би desired_count = 1
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   depends_on = [
     aws_lb_listener.http,
     aws_iam_role_policy_attachment.task_execution,
