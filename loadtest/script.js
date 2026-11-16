@@ -1,18 +1,15 @@
-// Навантажувальний сценарій: профіль «мало записів, багато читань».
-// Одна ітерація = 1 запис + 9 читань.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate } from 'k6/metrics';
 
 const BASE_URL = (__ENV.BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
-const VUS = Number(__ENV.VUS || 60);          // N користувачів на сталому навантаженні
-const THINK = Number(__ENV.THINK || 0.3);     // пауза між запитами, с
-const RAMP_UP = __ENV.RAMP_UP || '3m';        // фаза 1: наростання 0 -> N
-const STEADY = __ENV.STEADY || '5m';          // фаза 2: стале навантаження
-const RAMP_DOWN = __ENV.RAMP_DOWN || '2m';    // фаза 3: спад N -> 0
-const DEVICES = 20;                           // скільки пристроїв використовує тест
+const VUS = Number(__ENV.VUS || 60);
+const THINK = Number(__ENV.THINK || 0.3);
+const RAMP_UP = __ENV.RAMP_UP || '3m';
+const STEADY = __ENV.STEADY || '5m';
+const RAMP_DOWN = __ENV.RAMP_DOWN || '2m';
+const DEVICES = 20;
 
-// Частка влучань у кеш: сервіс повертає заголовок X-Cache (HIT / MISS / DISABLED)
 const cacheHitRate = new Rate('cache_hit_rate');
 
 function trackCache(r) {
@@ -37,8 +34,7 @@ export const options = {
   },
   summaryTrendStats: ['avg', 'min', 'med', 'p(95)', 'p(99)', 'max'],
   thresholds: {
-    http_req_failed: ['rate<0.01'], // частка помилок менша за 1%
-    // Пороги нижче потрібні лише для того, щоб у звіті була латентність окремо по кожній операції
+    http_req_failed: ['rate<0.01'],
     'http_req_duration{name:POST /devices/{id}/readings}': ['p(95)>=0'],
     'http_req_duration{name:GET /devices}': ['p(95)>=0'],
     'http_req_duration{name:GET /devices/{id}}': ['p(95)>=0'],
@@ -46,7 +42,6 @@ export const options = {
   },
 };
 
-// Виконується один раз перед тестом: гарантує, що в базі є DEVICES пристроїв
 export function setup() {
   const res = http.get(`${BASE_URL}/devices`);
   if (res.status !== 200) {
@@ -94,7 +89,6 @@ function listReadings(id, expectReadingId) {
 export default function (data) {
   const id = data.ids[Math.floor(Math.random() * data.ids.length)];
 
-  // ---- 1 операція запису ----
   const body = JSON.stringify({
     temperature: Math.round((15 + Math.random() * 15) * 10) / 10,
     humidity: Math.round((30 + Math.random() * 40) * 10) / 10,
@@ -107,10 +101,9 @@ export default function (data) {
   const newId = w.status === 201 ? w.json('id') : null;
   sleep(THINK);
 
-  // ---- 9 операцій читання ----
   listDevices();
   getDevice(id);
-  listReadings(id, newId); // включно зі щойно створеним показником
+  listReadings(id, newId);
   listDevices();
   getDevice(id);
   listReadings(id, null);

@@ -1,5 +1,3 @@
-# ---------- VPC і підмережі ----------
-
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -21,7 +19,6 @@ resource "aws_internet_gateway" "main" {
   tags   = { Name = "${var.project}-igw" }
 }
 
-# Публічні підмережі: ALB і контейнер (10.0.0.0/24, 10.0.1.0/24)
 resource "aws_subnet" "public" {
   count             = 2
   vpc_id            = aws_vpc.main.id
@@ -31,7 +28,6 @@ resource "aws_subnet" "public" {
   tags = { Name = "${var.project}-public-${count.index + 1}" }
 }
 
-# Приватні підмережі: тільки база (10.0.10.0/24, 10.0.11.0/24)
 resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
@@ -41,7 +37,6 @@ resource "aws_subnet" "private" {
   tags = { Name = "${var.project}-private-${count.index + 1}" }
 }
 
-# Публічна таблиця маршрутів: вихід в інтернет через IGW
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -59,7 +54,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Приватна таблиця маршрутів: БЕЗ маршруту в інтернет
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${var.project}-private-rt" }
@@ -70,8 +64,6 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
-
-# ---------- Security groups ----------
 
 resource "aws_security_group" "alb" {
   name        = "${var.project}-alb-sg"
@@ -91,7 +83,6 @@ resource "aws_security_group" "db" {
   vpc_id      = aws_vpc.main.id
 }
 
-# ALB: вхід 80 з інтернету, вихід тільки на контейнери
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   security_group_id = aws_security_group.alb.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -108,7 +99,6 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_app" {
   ip_protocol                  = "tcp"
 }
 
-# API: вхід тільки від ALB
 resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
   security_group_id            = aws_security_group.app.id
   referenced_security_group_id = aws_security_group.alb.id
@@ -117,7 +107,6 @@ resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
   ip_protocol                  = "tcp"
 }
 
-# API: вихід HTTPS (ECR, Secrets Manager, CloudWatch Logs)
 resource "aws_vpc_security_group_egress_rule" "app_https" {
   security_group_id = aws_security_group.app.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -126,7 +115,6 @@ resource "aws_vpc_security_group_egress_rule" "app_https" {
   ip_protocol       = "tcp"
 }
 
-# API: вихід на базу
 resource "aws_vpc_security_group_egress_rule" "app_to_db" {
   security_group_id            = aws_security_group.app.id
   referenced_security_group_id = aws_security_group.db.id
@@ -135,7 +123,6 @@ resource "aws_vpc_security_group_egress_rule" "app_to_db" {
   ip_protocol                  = "tcp"
 }
 
-# База: вхід 5432 ТІЛЬКИ від security group застосунку
 resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
   security_group_id            = aws_security_group.db.id
   referenced_security_group_id = aws_security_group.app.id

@@ -1,14 +1,12 @@
-# Пароль генерує Terraform: його немає ні в коді, ні в Git
 resource "random_password" "db" {
   length           = 24
   special          = true
   override_special = "!#%^*-_=+"
 }
 
-# Логін і пароль бази зберігаються в Secrets Manager
 resource "aws_secretsmanager_secret" "db" {
   name                    = "${var.project}-db-credentials"
-  recovery_window_in_days = 0 # щоб terraform destroy видаляв секрет одразу
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "db" {
@@ -39,12 +37,12 @@ resource "aws_db_instance" "main" {
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.db.id]
-  publicly_accessible    = false # немає публічної адреси
-  multi_az               = false # для лаби економимо
+  publicly_accessible    = false
+  multi_az               = false
 
-  backup_retention_period = 1 # автоматичні бекапи + point-in-time recovery
+  backup_retention_period = 1
 
-  skip_final_snapshot = true  # щоб destroy не залишав знімок
-  deletion_protection = false # щоб destroy міг видалити базу
+  skip_final_snapshot = true
+  deletion_protection = false
   apply_immediately   = true
 }

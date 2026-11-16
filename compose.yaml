@@ -12,12 +12,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-    # порт бази НЕ публікуємо назовні: API бачить її через внутрішню мережу
 
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no"]
-    # порт Redis теж не публікуємо
 
   api:
     build: .

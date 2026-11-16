@@ -1,9 +1,7 @@
-# ---------- Панель моніторингу CloudWatch (5 графіків) ----------
-
 locals {
   cluster_name = aws_ecs_cluster.main.name
   service_name = aws_ecs_service.app.name
-  alb_suffix   = aws_lb.main.arn_suffix # вимір LoadBalancer для метрик ALB
+  alb_suffix   = aws_lb.main.arn_suffix
 }
 
 resource "aws_cloudwatch_dashboard" "main" {

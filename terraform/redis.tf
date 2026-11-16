@@ -1,6 +1,3 @@
-# ---------- Redis: окремий ECS-сервіс, спільний кеш для всіх екземплярів API ----------
-
-# Приватна DNS-зона всередині VPC: API знаходить Redis за іменем redis.<project>.internal
 resource "aws_service_discovery_private_dns_namespace" "main" {
   name = "${var.project}.internal"
   vpc  = aws_vpc.main.id
@@ -21,7 +18,6 @@ resource "aws_service_discovery_service" "redis" {
   }
 }
 
-# Мережева ізоляція: до Redis можна дістатися ТІЛЬКИ з контейнерів API
 resource "aws_security_group" "redis" {
   name        = "${var.project}-redis-sg"
   description = "Redis: only from API security group"
@@ -36,7 +32,6 @@ resource "aws_vpc_security_group_ingress_rule" "redis_from_app" {
   ip_protocol                  = "tcp"
 }
 
-# Вихід HTTPS потрібен лише щоб завантажити образ і писати логи
 resource "aws_vpc_security_group_egress_rule" "redis_https" {
   security_group_id = aws_security_group.redis.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -76,7 +71,6 @@ resource "aws_ecs_task_definition" "redis" {
     image     = var.redis_image
     essential = true
 
-    # Тільки кеш у пам'яті: без запису на диск, при заповненні витісняються найстаріші ключі
     command = [
       "redis-server",
       "--save", "",
@@ -110,13 +104,13 @@ resource "aws_ecs_service" "redis" {
   name            = "${var.project}-redis"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.redis.arn
-  desired_count   = 1 # один спільний Redis, не масштабується
+  desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.redis.id]
-    assign_public_ip = true # лише для завантаження образу; вхід закритий security group
+    assign_public_ip = true
   }
 
   service_registries {

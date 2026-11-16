@@ -1,12 +1,10 @@
 name: Deploy to AWS
 
-# Автозапуск на push у main вимкнено: роль OIDC не створена,
-# бо SCP акаунта забороняє iam:CreateOpenIDConnectProvider (див. README).
 on:
   workflow_dispatch:
 
 permissions:
-  id-token: write # дозвіл отримати OIDC-токен
+  id-token: write
   contents: read
 
 env:

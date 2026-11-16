@@ -1,16 +1,13 @@
-# ---------- ECR: приватний реєстр образів ----------
-
 resource "aws_ecr_repository" "app" {
   name                 = var.project
-  image_tag_mutability = "IMMUTABLE" # тег = хеш коміту, перезаписати не можна
-  force_delete         = true        # destroy видалить і образи
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
   }
 }
 
-# Зберігати лише 10 останніх образів
 resource "aws_ecr_lifecycle_policy" "app" {
   repository = aws_ecr_repository.app.name
   policy = jsonencode({
@@ -27,14 +24,10 @@ resource "aws_ecr_lifecycle_policy" "app" {
   })
 }
 
-# ---------- Логи контейнера ----------
-
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.project}"
   retention_in_days = 7
 }
-
-# ---------- IAM-роль, від якої ECS запускає контейнер ----------
 
 data "aws_iam_policy_document" "ecs_tasks_assume" {
   statement {
@@ -51,13 +44,11 @@ resource "aws_iam_role" "task_execution" {
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
 }
 
-# Стандартні права: тягнути образ з ECR і писати логи
 resource "aws_iam_role_policy_attachment" "task_execution" {
   role       = aws_iam_role.task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Дозвіл читати ТІЛЬКИ наш секрет з паролем бази
 resource "aws_iam_role_policy" "task_execution_secret" {
   name = "read-db-secret"
   role = aws_iam_role.task_execution.id
@@ -70,8 +61,6 @@ resource "aws_iam_role_policy" "task_execution_secret" {
     }]
   })
 }
-
-# ---------- ALB: балансувальник ----------
 
 resource "aws_lb" "main" {
   name               = "${var.project}-alb"
@@ -110,12 +99,9 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# ---------- ECS Fargate ----------
-
 resource "aws_ecs_cluster" "main" {
   name = var.project
 
-  # Container Insights дає метрики RunningTaskCount / DesiredTaskCount для дашборда
   setting {
     name  = "containerInsights"
     value = "enabled"
@@ -126,10 +112,10 @@ resource "aws_ecs_task_definition" "app" {
   family                   = var.project
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "256" # 0.25 vCPU
-  memory                   = "512" # 0.5 ГБ
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
-  task_role_arn            = aws_iam_role.api_task.arn # права самого застосунку (SQS)
+  task_role_arn            = aws_iam_role.api_task.arn
 
   runtime_platform {
     operating_system_family = "LINUX"
@@ -143,7 +129,6 @@ resource "aws_ecs_task_definition" "app" {
 
     portMappings = [{ containerPort = var.app_port, protocol = "tcp" }]
 
-    # Звичайні змінні середовища
     environment = [
       { name = "DB_HOST", value = aws_db_instance.main.address },
       { name = "DB_PORT", value = tostring(aws_db_instance.main.port) },
@@ -157,7 +142,6 @@ resource "aws_ecs_task_definition" "app" {
       { name = "ASYNC_WRITES", value = tostring(var.async_writes) },
     ]
 
-    # Секретні змінні: ECS бере їх із Secrets Manager під час запуску
     secrets = [
       { name = "DB_USER", valueFrom = "${aws_secretsmanager_secret.db.arn}:username::" },
       { name = "DB_PASSWORD", valueFrom = "${aws_secretsmanager_secret.db.arn}:password::" },
@@ -186,7 +170,7 @@ resource "aws_ecs_service" "app" {
   network_configuration {
     subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.app.id]
-    assign_public_ip = true # тільки для вихідного трафіку (ECR, Secrets Manager)
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -195,14 +179,11 @@ resource "aws_ecs_service" "app" {
     container_port   = var.app_port
   }
 
-  # Якщо нова версія не стартує, ECS сам поверне попередню
   deployment_circuit_breaker {
     enable   = true
     rollback = true
   }
 
-  # Кількістю задач тепер керує автомасштабування:
-  # без цього terraform apply щоразу повертав би desired_count = 1
   lifecycle {
     ignore_changes = [desired_count]
   }

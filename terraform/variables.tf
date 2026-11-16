@@ -49,7 +49,6 @@ variable "github_repo" {
   type        = string
   default     = "shpytt/cloud-lab1"
 }
-# ---------- Автомасштабування (лабораторна 2) ----------
 
 variable "autoscaling_min" {
   description = "Мінімальна кількість задач"
@@ -69,8 +68,6 @@ variable "autoscaling_cpu_target" {
   default     = 60
 }
 
-# ---------- Сповіщення (лабораторна 2) ----------
-
 variable "alert_email" {
   description = "Адреса для сповіщень (задається в terraform.tfvars, не в репозиторії)"
   type        = string
@@ -81,8 +78,6 @@ variable "alarm_cpu_threshold" {
   type        = number
   default     = 70
 }
-
-# ---------- Кеш (лабораторна 2) ----------
 
 variable "redis_image" {
   description = "Образ Redis (офіційний redis:7-alpine з публічного дзеркала ECR)"
@@ -101,8 +96,6 @@ variable "cache_ttl_seconds" {
   type        = number
   default     = 30
 }
-
-# ---------- Черга та обробник (бонус) ----------
 
 variable "async_writes" {
   description = "Чи пише API показники через чергу (202 Accepted) замість прямого запису в базу"
@@ -127,8 +120,6 @@ variable "worker_queue_target" {
   type        = number
   default     = 100
 }
-
-# ---------- Розклад (бонус) ----------
 
 variable "schedule_day_min" {
   description = "Мінімум екземплярів удень (08:00-22:00 за Києвом)"

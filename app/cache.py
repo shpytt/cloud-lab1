@@ -1,9 +1,3 @@
-"""Кеш Redis для схеми cache-aside.
-
-Redis спільний для всіх екземплярів API, тому кожен екземпляр бачить
-однакові дані. Якщо Redis недоступний, функції тихо повертають None:
-сервіс продовжує працювати, просто читає з бази.
-"""
 import logging
 import os
 
@@ -17,7 +11,6 @@ CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "30"))
 
 DEVICES_LIST_KEY = "devices:all"
 
-# Короткі тайм-аути: якщо Redis не відповідає, не блокуємо запит надовго
 client = (
     redis.Redis.from_url(
         REDIS_URL,
@@ -39,7 +32,6 @@ def enabled() -> bool:
 
 
 def miss_label() -> str:
-    """Значення заголовка X-Cache, коли дані взято з бази."""
     return "MISS" if enabled() else "DISABLED"
 
 
@@ -57,13 +49,12 @@ def put(key: str, value: str) -> None:
     if not enabled():
         return
     try:
-        client.set(key, value, ex=CACHE_TTL_SECONDS)  # ex = термін дії (TTL), с
+        client.set(key, value, ex=CACHE_TTL_SECONDS)
     except redis.RedisError as exc:
         log.warning("Cache write failed: %s", exc)
 
 
 def invalidate(*keys: str) -> None:
-    """Видаляє записи з кешу після зміни даних у базі."""
     if not enabled():
         return
     try:
@@ -73,7 +64,6 @@ def invalidate(*keys: str) -> None:
 
 
 def stats() -> dict:
-    """Лічильники влучань і промахів, які веде сам Redis (спільні для всіх екземплярів)."""
     result = {
         "enabled": CACHE_ENABLED,
         "ttl_seconds": CACHE_TTL_SECONDS,

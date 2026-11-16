@@ -1,16 +1,13 @@
-# ---------- Черга SQS та обробник (бонус: асинхронний запис) ----------
-
-# Черга "мертвих листів": сюди потрапляє повідомлення після 5 невдалих спроб обробки
 resource "aws_sqs_queue" "readings_dlq" {
   name                      = "${var.project}-readings-dlq"
-  message_retention_seconds = 1209600 # 14 днів
+  message_retention_seconds = 1209600
 }
 
 resource "aws_sqs_queue" "readings" {
   name                       = "${var.project}-readings"
-  visibility_timeout_seconds = 60    # скільки повідомлення приховане, поки його обробляють
-  receive_wait_time_seconds  = 20    # long polling
-  message_retention_seconds  = 86400 # 1 доба
+  visibility_timeout_seconds = 60
+  receive_wait_time_seconds  = 20
+  message_retention_seconds  = 86400
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.readings_dlq.arn
@@ -18,9 +15,6 @@ resource "aws_sqs_queue" "readings" {
   })
 }
 
-# ---------- Ролі задач (task role): права самого коду, а не ECS-агента ----------
-
-# API може лише класти повідомлення в чергу
 resource "aws_iam_role" "api_task" {
   name               = "${var.project}-api-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
@@ -39,7 +33,6 @@ resource "aws_iam_role_policy" "api_task_sqs" {
   })
 }
 
-# Обробник може лише читати й видаляти повідомлення
 resource "aws_iam_role" "worker_task" {
   name               = "${var.project}-worker-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
@@ -57,8 +50,6 @@ resource "aws_iam_role_policy" "worker_task_sqs" {
     }]
   })
 }
-
-# ---------- Обробник: той самий образ, інша команда запуску ----------
 
 resource "aws_ecs_task_definition" "worker" {
   family                   = "${var.project}-worker"
@@ -116,18 +107,16 @@ resource "aws_ecs_service" "worker" {
 
   network_configuration {
     subnets          = aws_subnet.public[*].id
-    security_groups  = [aws_security_group.app.id] # ті самі правила: база, Redis, HTTPS
+    security_groups  = [aws_security_group.app.id]
     assign_public_ip = true
   }
 
   lifecycle {
-    ignore_changes = [desired_count] # кількістю керує автомасштабування
+    ignore_changes = [desired_count]
   }
 
   depends_on = [aws_iam_role_policy.worker_task_sqs]
 }
-
-# ---------- Масштабування обробника від довжини черги ----------
 
 resource "aws_appautoscaling_target" "worker" {
   service_namespace  = "ecs"
@@ -145,7 +134,6 @@ resource "aws_appautoscaling_policy" "worker_queue" {
   scalable_dimension = aws_appautoscaling_target.worker.scalable_dimension
 
   target_tracking_scaling_policy_configuration {
-    # Метрика не вбудована, тому описуємо її вручну: кількість повідомлень у черзі
     customized_metric_specification {
       namespace   = "AWS/SQS"
       metric_name = "ApproximateNumberOfMessagesVisible"
@@ -157,7 +145,7 @@ resource "aws_appautoscaling_policy" "worker_queue" {
       }
     }
 
-    target_value       = var.worker_queue_target # тримаємо в черзі не більше ~100 повідомлень
+    target_value       = var.worker_queue_target
     scale_out_cooldown = 60
     scale_in_cooldown  = 120
   }

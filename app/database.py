@@ -4,8 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-# Параметри підключення беруться ТІЛЬКИ зі змінних середовища.
-# Паролів у коді немає (вимога лаби).
 DATABASE_URL = URL.create(
     drivername="postgresql+psycopg",
     username=os.environ["DB_USER"],

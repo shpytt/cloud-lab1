@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""Тест ідемпотентності: два однакові запити -> один запис у базі, дві однакові відповіді.
-
-Запуск:  python3 tests/test_idempotency.py http://<адреса-сервісу>
-Працює і в синхронному режимі (201), і з чергою (202).
-"""
 import json
 import sys
 import time
@@ -31,7 +26,6 @@ def count_readings(device_id):
 
 
 def wait_done(body):
-    """У режимі черги чекаємо, поки обробник виконає запис."""
     for _ in range(60):
         job = call("GET", body["status_url"])[1]
         if job["status"] != "queued":

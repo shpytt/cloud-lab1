@@ -1,9 +1,3 @@
-"""Асинхронний запис через чергу SQS: API кладе повідомлення, обробник (worker) виконує.
-
-Повідомлення відправляються в SQS не по одному, а пачками до 10 штук із фонового
-потоку: окремий підписаний HTTPS-виклик на кожен запит коштував API більше
-процесорного часу, ніж сам запис у базу (див. docs/QUEUE.md).
-"""
 import json
 import logging
 import os
@@ -21,10 +15,10 @@ log = logging.getLogger("jobs")
 ASYNC_WRITES = os.getenv("ASYNC_WRITES", "false").lower() == "true"
 QUEUE_URL = os.getenv("SQS_QUEUE_URL", "")
 AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")
-JOB_TTL_SECONDS = 3600  # скільки зберігаємо статус запиту для клієнта
+JOB_TTL_SECONDS = 3600
 
-BATCH_SIZE = 10        # максимум повідомлень в одному SendMessageBatch (обмеження SQS)
-LINGER_SECONDS = 0.05  # скільки чекаємо, щоб набрати пачку
+BATCH_SIZE = 10
+LINGER_SECONDS = 0.05
 
 sqs = boto3.client("sqs", region_name=AWS_REGION) if QUEUE_URL else None
 
@@ -72,7 +66,6 @@ def _send_batch(batch: list[dict]) -> None:
 
 
 def _sender_loop() -> None:
-    """Фоновий потік: збирає повідомлення з буфера в пачки і відправляє в SQS."""
     stopping = False
     while not stopping:
         first = _buffer.get()
@@ -103,15 +96,12 @@ def start_sender() -> None:
 
 
 def shutdown() -> None:
-    """Graceful shutdown: перед зупинкою контейнера відправляємо все, що лишилось у буфері."""
     if _sender is not None:
         _buffer.put(_STOP)
         _sender.join(timeout=10)
 
 
 def enqueue_reading(request_id: str, device_id: int, data: dict) -> None:
-    # Статус "queued" ставимо ДО відправлення: інакше швидкий обробник
-    # міг би записати "done" раніше, і ми перезаписали б його на "queued".
     set_status(request_id, {"request_id": request_id, "status": "queued"})
     _buffer.put({"request_id": request_id, "device_id": device_id, **data})
 

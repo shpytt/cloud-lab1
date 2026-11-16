@@ -1,9 +1,3 @@
-"""Обробник черги: окремий контейнер (той самий образ, команда `python -m app.worker`).
-
-Читає повідомлення із SQS і записує показники в базу. SQS гарантує доставку
-"щонайменше один раз", тому те саме повідомлення може прийти двічі:
-від повторного запису захищає позначка processed:<request_id> у Redis.
-"""
 import json
 import logging
 import os
@@ -18,7 +12,6 @@ from .database import SessionLocal
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("worker")
 
-# Штучна затримка імітує тривалу обробку (щоб черга росла під навантаженням)
 DELAY_SECONDS = float(os.getenv("WORKER_DELAY_MS", "0")) / 1000
 PROCESSED_TTL_SECONDS = 24 * 3600
 
@@ -26,7 +19,6 @@ running = True
 
 
 def stop(signum, frame):
-    """Graceful shutdown: на SIGTERM дообробляємо поточну пачку і виходимо."""
     global running
     log.info("SIGTERM received, finishing current batch")
     running = False
@@ -86,7 +78,6 @@ def main() -> None:
     log.info("Worker started, queue: %s", jobs.QUEUE_URL)
 
     while running:
-        # Long polling: чекаємо повідомлення до 20 с замість постійних порожніх запитів
         response = sqs.receive_message(
             QueueUrl=jobs.QUEUE_URL,
             MaxNumberOfMessages=10,
@@ -96,10 +87,8 @@ def main() -> None:
             try:
                 process(json.loads(msg["Body"]))
             except Exception:
-                # Не видаляємо: після visibility timeout SQS віддасть повідомлення ще раз
                 log.exception("Failed to process message %s", msg.get("MessageId"))
                 continue
-            # Видаляємо лише після успішної обробки
             sqs.delete_message(QueueUrl=jobs.QUEUE_URL, ReceiptHandle=msg["ReceiptHandle"])
 
     log.info("Worker stopped")

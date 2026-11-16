@@ -37,7 +37,6 @@ class ReadingOut(BaseModel):
     created_at: datetime
 
 class ReadingAccepted(BaseModel):
-    """Відповідь 202: запис прийнято в чергу, результат буде пізніше."""
 
     request_id: str
     status: str

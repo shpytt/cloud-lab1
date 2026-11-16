@@ -16,7 +16,6 @@ terraform {
 provider "aws" {
   region = var.region
 
-  # Ці теги автоматично отримає кожен ресурс
   default_tags {
     tags = {
       Project   = var.project

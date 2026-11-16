@@ -21,7 +21,6 @@ APP_VERSION = "1.3.1"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Чекаємо базу і створюємо таблиці, якщо їх ще немає
     for attempt in range(1, 11):
         try:
             Base.metadata.create_all(bind=engine)
@@ -33,7 +32,6 @@ async def lifespan(app: FastAPI):
     else:
         raise RuntimeError("Could not connect to the database")
     yield
-    # Зупинка (SIGTERM): відправляємо в SQS усе, що лишилось у буфері
     jobs.shutdown()
 
 
@@ -48,7 +46,6 @@ def get_device_or_404(device_id: int, db: Session) -> models.Device:
 
 
 def json_response(body: str, cache_status: str) -> Response:
-    """Готовий JSON + заголовок X-Cache: HIT / MISS / DISABLED."""
     return Response(
         content=body,
         media_type="application/json",
@@ -71,22 +68,17 @@ def cache_stats():
     return cache.stats()
 
 
-# ---------- Devices ----------
-
 @app.get("/devices", response_model=list[schemas.DeviceOut])
 def list_devices(db: Session = Depends(get_db)):
-    # Cache-aside, крок 1: перевіряємо кеш
     cached = cache.get_cached(cache.DEVICES_LIST_KEY)
     if cached is not None:
-        return json_response(cached, "HIT")  # до бази не звертаємося взагалі
+        return json_response(cached, "HIT")
 
-    # Крок 2: у кеші немає (або сплив TTL) - читаємо з бази
     devices = db.scalars(select(models.Device).order_by(models.Device.id)).all()
     body = json.dumps(
         [schemas.DeviceOut.model_validate(d).model_dump(mode="json") for d in devices]
     )
 
-    # Крок 3: кладемо в кеш із терміном дії і повертаємо
     cache.put(cache.DEVICES_LIST_KEY, body)
     return json_response(body, cache.miss_label())
 
@@ -97,7 +89,7 @@ def create_device(data: schemas.DeviceCreate, db: Session = Depends(get_db)):
     db.add(device)
     db.commit()
     db.refresh(device)
-    cache.invalidate(cache.DEVICES_LIST_KEY)  # список змінився
+    cache.invalidate(cache.DEVICES_LIST_KEY)
     return device
 
 
@@ -121,7 +113,6 @@ def update_device(device_id: int, data: schemas.DeviceUpdate, db: Session = Depe
         setattr(device, field, value)
     db.commit()
     db.refresh(device)
-    # Інвалідація: після запису в базу видаляємо застарілі записи з кешу
     cache.invalidate(cache.DEVICES_LIST_KEY, cache.device_key(device_id))
     return device
 
@@ -134,10 +125,7 @@ def delete_device(device_id: int, db: Session = Depends(get_db)):
     cache.invalidate(cache.DEVICES_LIST_KEY, cache.device_key(device_id))
 
 
-# ---------- Readings ----------
-
 def create_reading_now(device_id: int, data: schemas.ReadingCreate, db: Session) -> tuple[int, dict]:
-    """Синхронний запис: одразу в базу, відповідь 201."""
     get_device_or_404(device_id, db)
     reading = models.Reading(device_id=device_id, **data.model_dump())
     db.add(reading)
@@ -147,7 +135,6 @@ def create_reading_now(device_id: int, data: schemas.ReadingCreate, db: Session)
 
 
 def enqueue_reading(device_id: int, data: schemas.ReadingCreate) -> tuple[int, dict]:
-    """Асинхронний запис: кладемо в чергу, відповідь 202. До бази не звертаємося."""
     request_id = str(uuid.uuid4())
     jobs.enqueue_reading(request_id, device_id, data.model_dump())
     return 202, {
@@ -169,13 +156,11 @@ def add_reading(
     idempotency_key: str | None = Header(default=None, max_length=200),
     db: Session = Depends(get_db),
 ):
-    # --- Ідемпотентність: перевіряємо, чи не бачили вже цей ключ ---
     idem_key = None
     if idempotency_key:
         idem_key = f"idem:reading:{device_id}:{idempotency_key}"
         state, saved = idempotency.begin(idem_key)
         if state == "replay":
-            # Повтор: віддаємо збережену відповідь, операцію НЕ виконуємо
             return JSONResponse(
                 status_code=saved["status"],
                 content=saved["body"],
@@ -187,7 +172,6 @@ def add_reading(
                 detail="A request with this Idempotency-Key is still being processed",
             )
 
-    # --- Сама операція: через чергу або напряму ---
     try:
         if jobs.ASYNC_WRITES:
             status_code, body = enqueue_reading(device_id, data)
@@ -195,17 +179,16 @@ def add_reading(
             status_code, body = create_reading_now(device_id, data, db)
     except Exception:
         if idem_key:
-            idempotency.abort(idem_key)  # помилка: дозволяємо повторити з тим самим ключем
+            idempotency.abort(idem_key)
         raise
 
     if idem_key:
-        idempotency.complete(idem_key, status_code, body)  # зберігаємо на 24 години
+        idempotency.complete(idem_key, status_code, body)
     return JSONResponse(status_code=status_code, content=body)
 
 
 @app.get("/readings/requests/{request_id}")
 def reading_request_status(request_id: str):
-    """Як клієнт дізнається результат асинхронного запису: queued / done / failed."""
     job = jobs.get_status(request_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Request not found")

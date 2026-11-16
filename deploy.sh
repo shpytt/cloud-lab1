@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Ручне розгортання (CI/CD через OIDC неможливий через SCP акаунта, див. README):
-# збирає образ із тегом = хеш коміту, пушить в ECR і застосовує Terraform.
-# Додаткові аргументи передаються в terraform apply.
 set -euo pipefail
 cd "$(dirname "$0")"
 
