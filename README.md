@@ -11,6 +11,33 @@ REST API для IoT-пристроїв і їхніх показників (те�
 - база в приватній мережі, доступ до неї лише з контейнерів;
 - пароль бази зберігається в Secrets Manager, у коді його немає.
 
+```
+cloud-lab1/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+├── app/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── main.py
+│   ├── models.py
+│   └── schemas.py
+├── terraform/
+│   ├── app.tf
+│   ├── database.tf
+│   ├── github_oidc.tf.disabled
+│   ├── network.tf
+│   ├── outputs.tf
+│   ├── providers.tf
+│   └── variables.tf
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── compose.yaml
+└── requirements.txt
+```
+
 ## Лабораторна 2: масштабування, моніторинг, кешування
 
 1. Автомасштабування від 1 до 4 контейнерів за процесором — `terraform/autoscaling.tf`
@@ -23,6 +50,42 @@ REST API для IoT-пристроїв і їхніх показників (те�
 8. Масштабування за розкладом (бонус) — `terraform/schedule.tf`
 
 Звіти й знімки — у папці `docs/`.
+
+Файли, додані в лабораторній 2:
+
+```
+cloud-lab1/
+├── app/
+│   ├── cache.py
+│   ├── idempotency.py
+│   ├── jobs.py
+│   └── worker.py
+├── docs/
+│   ├── img/
+│   ├── ALERTS.md
+│   ├── AUTOSCALING.md
+│   ├── CACHE.md
+│   ├── IDEMPOTENCY.md
+│   ├── LOADTEST.md
+│   ├── QUEUE.md
+│   └── SCHEDULE.md
+├── loadtest/
+│   ├── results/
+│   ├── README.md
+│   ├── run.sh
+│   └── script.js
+├── terraform/
+│   ├── alerts.tf
+│   ├── autoscaling.tf
+│   ├── monitoring.tf
+│   ├── queue.tf
+│   ├── redis.tf
+│   ├── schedule.tf
+│   └── terraform.tfvars.example
+├── tests/
+│   └── test_idempotency.py
+└── deploy.sh
+```
 
 ## Локальний запуск
 
